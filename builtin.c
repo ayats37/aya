@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:49:54 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:49:55 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 16:57:55 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,6 @@ int	execute_builtin(t_token *node, t_env **envlist)
 
 	stdout_backup = dup(STDOUT_FILENO);
 	stdin_backup = dup(STDIN_FILENO);
-	
 	if (node && node->redir)
 	{
 		redir_result = handle_redirection(node);

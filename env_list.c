@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/13 10:31:48 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:50:35 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 16:59:42 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,34 +20,22 @@ t_env	*create_env_node(char *env_var)
 	new_node = malloc(sizeof(t_env));
 	if (!new_node)
 		return (NULL);
-	
 	new_node->next = NULL;
 	equal_sign = strchr(env_var, '=');
-	
 	if (equal_sign)
 	{
 		new_node->name = strndup(env_var, equal_sign - env_var);
 		if (!new_node->name)
-		{
-			free(new_node);
-			return (NULL);
-		}
+			return (free(new_node), NULL);
 		new_node->value = strdup(equal_sign + 1);
 		if (!new_node->value)
-		{
-			free(new_node->name);
-			free(new_node);
-			return (NULL);
-		}
+			return (free(new_node->name), free(new_node), NULL);
 	}
 	else
 	{
 		new_node->name = strdup(env_var);
 		if (!new_node->name)
-		{
-			free(new_node);
-			return (NULL);
-		}
+			return (free(new_node), NULL);
 		new_node->value = NULL;
 	}
 	return (new_node);

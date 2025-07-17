@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/13 10:33:37 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:51:35 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 17:04:54 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,4 +72,3 @@ void	write_error_no_exit(char *command, char *message)
 	write(STDERR_FILENO, message, strlen(message));
 	write(STDERR_FILENO, "\n", 1);
 }
-

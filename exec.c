@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:50:47 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 16:29:10 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 16:31:47 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@ int execute_cmds(t_token *token, t_env **env_list, int *last_exit_status)
 
     if (!token)
         return (1);
-
     tmp = token;
     has_pipe = 0;
     while (tmp)
@@ -32,7 +31,6 @@ int execute_cmds(t_token *token, t_env **env_list, int *last_exit_status)
         }
         tmp = tmp->next;
     }
-
     if (has_pipe)
         return (execute_pipeline(token, env_list, last_exit_status));
 
