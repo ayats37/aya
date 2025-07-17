@@ -12,8 +12,7 @@
 
 #include "minishell.h"
 
-
-int	g_heredoc_interrupted = 0;
+int		g_heredoc_interrupted = 0;
 
 void	heredoc_sigint_handler(int sig)
 {
@@ -46,11 +45,12 @@ void	handle_heredoc_input(char *delimiter, int write_fd)
 	}
 }
 
-void close_heredoc_fds(t_token *token)
+void	close_heredoc_fds(t_token *token)
 {
-	t_token *tmp = token;
-	t_token *redir;
-	
+	t_token	*tmp;
+	t_token	*redir;
+
+	tmp = token;
 	while (tmp)
 	{
 		if (tmp->redir)
@@ -70,17 +70,18 @@ void close_heredoc_fds(t_token *token)
 	}
 }
 
-void process_heredoc(t_token *token)
+void	process_heredoc(t_token *token)
 {
 	int		status;
-	pid_t pid;
-	int pipe_fd[2];
-	t_token *redir;
-	
+	pid_t	pid;
+	int		pipe_fd[2];
+	t_token	*redir;
+	t_token	*tmp;
+
 	if (!token)
 		return ;
 	g_heredoc_interrupted = 0;
-	t_token *tmp = token;
+	tmp = token;
 	while (tmp)
 	{
 		if (tmp->redir)
@@ -94,7 +95,7 @@ void process_heredoc(t_token *token)
 					{
 						close(redir->fd);
 						redir->fd = -1;
-					}			
+					}
 					if (pipe(pipe_fd) == -1)
 					{
 						perror("pipe failed");
@@ -150,6 +151,6 @@ void process_heredoc(t_token *token)
 				redir = redir->next;
 			}
 		}
-		tmp = tmp->next;	
+		tmp = tmp->next;
 	}
 }

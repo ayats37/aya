@@ -34,7 +34,7 @@ int	ft_atoi(const char *str)
 		if (nb > 9223372036854775807 && sign == 1)
 			return (-1);
 		else if (nb > 9223372036854775807 && sign == -1)
-			return (0); 
+			return (0);
 		nb = nb * 10 + str[i] - '0';
 		i++;
 	}

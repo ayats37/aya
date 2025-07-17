@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/13 10:33:37 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 17:04:54 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 18:11:15 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,15 +14,13 @@
 
 int	is_alphanumeric(int c)
 {
-	return ((c >= 'A' && c <= 'Z')
-		|| (c >= 'a' && c <= 'z')
-		|| (c >= '0' && c <= '9'));
+	return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0'
+			&& c <= '9'));
 }
 
 int	is_alpha(int c)
 {
-	return ((c >= 'A' && c <= 'Z')
-		|| (c >= 'a' && c <= 'z'));
+	return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 }
 
 int	is_digit(int c)
@@ -60,15 +58,4 @@ char	*char_to_str(char c)
 	str[0] = c;
 	str[1] = '\0';
 	return (str);
-}
-void	write_error_no_exit(char *command, char *message)
-{
-	write(STDERR_FILENO, "minishell: ", 11);
-	if (command)
-	{
-		write(STDERR_FILENO, command, strlen(command));
-		write(STDERR_FILENO, ": ", 2);
-	}
-	write(STDERR_FILENO, message, strlen(message));
-	write(STDERR_FILENO, "\n", 1);
 }

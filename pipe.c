@@ -6,102 +6,125 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:51:18 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 16:28:53 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 18:30:35 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int execute_pipeline(t_token *token, t_env **env_list, int *last_exit_status)
+int	**allocate_pipes(int cmd_count)
 {
-    int cmd_count = 0;
-    t_token *tmp = token;
-    while (tmp)
-    {
-        if (tmp->type == 1 || tmp->type == 3 || tmp->type == 4)
-            cmd_count++;
-        tmp = tmp->next;
-    }
+	int	**pipes;
+	int	i;
 
-    if (cmd_count <= 1)
-    {
-        if (is_builtin(token->cmds[0]))
-        {
-            *last_exit_status = execute_builtin(token, env_list);
-            return *last_exit_status;
-        }
-        else
-            return execute_cmd(token->cmds, *env_list, token, last_exit_status);
-    }
+	pipes = malloc(sizeof(int *) * (cmd_count - 1));
+	i = 0;
+	if (!pipes)
+		return (NULL);
+	while (i < cmd_count - 1)
+	{
+		pipes[i] = malloc(sizeof(int) * 2);
+		if (!pipes[i])
+		{
+			while (--i >= 0)
+				free(pipes[i]);
+			free(pipes);
+			return (NULL);
+		}
+		i++;
+	}
+	return (pipes);
+}
 
-    int pipes[cmd_count - 1][2];
-    pid_t pids[cmd_count];
-    for (int i = 0; i < cmd_count - 1; i++)
-    {
-        if (pipe(pipes[i]) == -1)
-        {
-            write_error_no_exit(NULL, "pipe failed");
-            *last_exit_status = 1;
-            return 1;
-        }
-    }
+t_pipe_data	*allocate_pipeline_data(int cmd_count)
+{
+	t_pipe_data	*data;
 
-    tmp = token;
-    int cmd_index = 0;
-    while (tmp && cmd_index < cmd_count)
-    {
-        if (tmp->type == 1 || tmp->type == 3 || tmp->type == 4)
-        {
-            pids[cmd_index] = fork();
-            if (pids[cmd_index] == -1)
-            {
-                write_error_no_exit(NULL, "fork failed");
-                *last_exit_status = 1;
-                return 1;
-            }
+	data = malloc(sizeof(t_pipe_data));
+	if (!data)
+		return (NULL);
+	data->pipes = allocate_pipes(cmd_count);
+	if (!data->pipes)
+	{
+		free(data);
+		return (NULL);
+	}
+	data->pids = malloc(sizeof(pid_t) * cmd_count);
+	if (!data->pids)
+	{
+		free_pipes(data->pipes, cmd_count - 1);
+		free(data);
+		return (NULL);
+	}
+	data->cmd_count = cmd_count;
+	return (data);
+}
 
-            if (pids[cmd_index] == 0)
-            {
-                if (cmd_index > 0)
-                    dup2(pipes[cmd_index - 1][0], STDIN_FILENO);
-                if (cmd_index < cmd_count - 1)
-                    dup2(pipes[cmd_index][1], STDOUT_FILENO);
-                for (int i = 0; i < cmd_count - 1; i++)
-                {
-                    close(pipes[i][0]);
-                    close(pipes[i][1]);
-                }
-                if (is_builtin(tmp->cmds[0]))
-                    exit(execute_builtin(tmp, env_list));
-                else
-                    exit(execute_cmd(tmp->cmds, *env_list, tmp, last_exit_status));
-            }
-            cmd_index++;
-        }
-        tmp = tmp->next;
-    }
+void	child_pipes(t_pipe_data *data, int cmd_index)
+{
+	int	i;
 
-    for (int i = 0; i < cmd_count - 1; i++)
-    {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
-    }
+	i = 0;
+	if (cmd_index > 0)
+		dup2(data->pipes[cmd_index - 1][0], STDIN_FILENO);
+	if (cmd_index < data->cmd_count - 1)
+		dup2(data->pipes[cmd_index][1], STDOUT_FILENO);
+	while (i < data->cmd_count - 1)
+	{
+		close(data->pipes[i][0]);
+		close(data->pipes[i][1]);
+		i++;
+	}
+}
 
-    int status = 0;
-    for (int i = 0; i < cmd_count; i++)
-    {
-        int temp_status;
-        waitpid(pids[i], &temp_status, 0);
-        if (i == cmd_count - 1)
-            status = temp_status;
-    }
+int	fork_pipe_cmds(t_token *token, t_env **env_list, t_pipe_data *data)
+{
+	t_token	*tmp;
+	int		cmd_index;
 
-    if (WIFEXITED(status))
-        *last_exit_status = WEXITSTATUS(status);
-    else if (WIFSIGNALED(status))
-        *last_exit_status = 128 + WTERMSIG(status);
-    else
-        *last_exit_status = 1;
+	tmp = token;
+	cmd_index = 0;
+	while (tmp && cmd_index < data->cmd_count)
+	{
+		if (tmp->type == 1 || tmp->type == 3 || tmp->type == 4)
+		{
+			data->pids[cmd_index] = fork();
+			if (data->pids[cmd_index] == -1)
+				return (write_error_no_exit(NULL, "fork failed"),
+					*(data->last_exit_status) = 1, 1);
+			if (data->pids[cmd_index] == 0)
+			{
+				child_pipes(data, cmd_index);
+				execute_child_in_pipe(tmp, env_list, data->last_exit_status);
+			}
+			cmd_index++;
+		}
+		tmp = tmp->next;
+	}
+	return (0);
+}
 
-    return *last_exit_status;
+int	execute_pipeline(t_token *token, t_env **env_list, int *last_exit_status)
+{
+	int			cmd_count;
+	t_pipe_data	*data;
+
+	cmd_count = count_commands(token);
+	if (cmd_count <= 1)
+		return (execute_single_command(token, env_list, last_exit_status));
+	data = allocate_pipeline_data(cmd_count);
+	if (!data)
+	{
+		*last_exit_status = 1;
+		return (1);
+	}
+	data->last_exit_status = last_exit_status;
+	if (create_pipes(data) != 0)
+		return (free_pipeline_data(data), 1);
+	if (fork_pipe_cmds(token, env_list, data) != 0)
+		return (free_pipeline_data(data), 1);
+	close_all_pipes(data);
+	wait_for_children(data);
+	free_pipeline_data(data);
+	return (*last_exit_status);
 }

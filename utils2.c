@@ -6,16 +6,14 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/22 00:50:21 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:51:47 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 18:11:30 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-void	write_error(char *command, char *message)
+void	write_error_no_exit(char *command, char *message)
 {
-	int	exit_status;
-
 	write(STDERR_FILENO, "minishell: ", 11);
 	if (command)
 	{
@@ -24,14 +22,6 @@ void	write_error(char *command, char *message)
 	}
 	write(STDERR_FILENO, message, strlen(message));
 	write(STDERR_FILENO, "\n", 1);
-	if (strstr(message, "command not found"))
-		exit_status = 127;
-	else if (strstr(message, "is a directory")
-		|| strstr(message, "Permission denied"))
-		exit_status = 126;
-	else
-		exit_status = 1;
-	exit(exit_status);
 }
 
 char	*str_join_free(char *s1, const char *s2)
@@ -47,4 +37,20 @@ char	*str_join_free(char *s1, const char *s2)
 	strcat(res, s2);
 	free(s1);
 	return (res);
+}
+
+int	count_commands(t_token *token)
+{
+	int		cmd_count;
+	t_token	*tmp;
+
+	cmd_count = 0;
+	tmp = token;
+	while (tmp)
+	{
+		if (tmp->type == 1 || tmp->type == 3 || tmp->type == 4)
+			cmd_count++;
+		tmp = tmp->next;
+	}
+	return (cmd_count);
 }

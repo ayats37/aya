@@ -6,49 +6,53 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:52:17 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 16:03:02 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 17:41:20 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char *get_env(t_env *env_list, const char *name)
+char	*get_env(t_env *env_list, const char *name)
 {
-    while (env_list)
-    {
-        if (strcmp(env_list->name, name) == 0)
-            return env_list->value;
-        env_list = env_list->next;
-    }
-    return NULL;
+	while (env_list)
+	{
+		if (strcmp(env_list->name, name) == 0)
+			return (env_list->value);
+		env_list = env_list->next;
+	}
+	return (NULL);
 }
 
-char *get_var_name(char *str, int *i)
+char	*get_var_name(char *str, int *i)
 {
-    int start = *i;
-    while (str[*i] && (ft_isalnum(str[*i]) || str[*i] == '_'))
-        (*i)++;
-    return ft_substr(str, start, *i - start);
+	int	start;
+
+	start = *i;
+	while (str[*i] && (ft_isalnum(str[*i]) || str[*i] == '_'))
+		(*i)++;
+	return (ft_substr(str, start, *i - start));
 }
 
 void	free_token_array(char **tokens)
 {
-	int i = 0;
+	int	i;
+
+	i = 0;
 	while (tokens && tokens[i])
 		free(tokens[i++]);
 	free(tokens);
 }
 
-
-
 char	**split_whitespace(char *str)
 {
 	char	**words;
-	int		count = 0;
-	int 	i = 0;
-	int j;
-	int k;
+	int		count;
+	int		i;
+	int		j;
+	int		k;
 
+	count = 0;
+	i = 0;
 	if (!str || !*str)
 		return (NULL);
 	while (str[i])
@@ -94,101 +98,111 @@ char	**split_whitespace(char *str)
 	return (words);
 }
 
-void insert_tokens_after(t_token *token, char **words, int type)
+void	insert_tokens_after(t_token *token, char **words, int type)
 {
-    t_token *curr = token;
-    for (int i = 1; words[i]; i++)
-    {
-        t_token *new = malloc(sizeof(t_token));
-        if (!new)
-            return;
-        new->value = ft_strdup(words[i]);
-        new->type = type;
-        new->next = curr->next;
-        curr->next = new;
-        curr = new;
-    }
+	t_token	*curr;
+	t_token	*new;
+
+	curr = token;
+	for (int i = 1; words[i]; i++)
+	{
+		new = malloc(sizeof(t_token));
+		if (!new)
+			return ;
+		new->value = ft_strdup(words[i]);
+		new->type = type;
+		new->next = curr->next;
+		curr->next = new;
+		curr = new;
+	}
 }
 
-
-char *expand_token(char *str, t_env *env_list, int last_exit_status, int type)
+char	*expand_token(char *str, t_env *env_list, int last_exit_status,
+		int type)
 {
-    int i = 0;
-    char *result = ft_strdup("");
-    char *tmp = NULL;
+	int		i;
+	char	*result;
+	char	*tmp;
+	char	*var_name;
+	char	*val;
+	char	*new_result;
 
-    if (!result)
-        return NULL;
-
-    while (str[i])
-    {
-        if (str[i] == '$' && type != 3)
-        {
-            i++;
-            if (str[i] == '?')
-            {
-                tmp = ft_itoa(last_exit_status);
-                i++;
-            }
-            else if (str[i] && (ft_isalpha(str[i]) || str[i] == '_'))
-            {
-                char *var_name = get_var_name(str, &i);
-                char *val = get_env(env_list, var_name);
-                if (val != NULL)
-                    tmp = ft_strdup(val);
-                else
-                    tmp = ft_strdup("");
-                free(var_name);
-            }
-            else
-                tmp = ft_strdup("$");
-        }
-        else
-        {
-            tmp = ft_substr(str, i, 1);
-            i++;
-        }
-
-        if (!tmp)
-        {
-            free(result);
-            return NULL;
-        }
-        char *new_result = ft_strjoin(result, tmp);
-        free(tmp);
-        free(result);
-        result = new_result;
-        if (!result)
-            return NULL;
-    }
-    return result;
+	i = 0;
+	result = ft_strdup("");
+	tmp = NULL;
+	if (!result)
+		return (NULL);
+	while (str[i])
+	{
+		if (str[i] == '$' && type != 3)
+		{
+			i++;
+			if (str[i] == '?')
+			{
+				tmp = ft_itoa(last_exit_status);
+				i++;
+			}
+			else if (str[i] && (ft_isalpha(str[i]) || str[i] == '_'))
+			{
+				var_name = get_var_name(str, &i);
+				val = get_env(env_list, var_name);
+				if (val != NULL)
+					tmp = ft_strdup(val);
+				else
+					tmp = ft_strdup("");
+				free(var_name);
+			}
+			else
+				tmp = ft_strdup("$");
+		}
+		else
+		{
+			tmp = ft_substr(str, i, 1);
+			i++;
+		}
+		if (!tmp)
+		{
+			free(result);
+			return (NULL);
+		}
+		new_result = ft_strjoin(result, tmp);
+		free(tmp);
+		free(result);
+		result = new_result;
+		if (!result)
+			return (NULL);
+	}
+	return (result);
 }
 
-void expand_variables(t_token *tokens, t_env *env_list, int last_exit_status)
+void	expand_variables(t_token *tokens, t_env *env_list, int last_exit_status)
 {
-    while (tokens)
-    {
-        if (tokens->type == 1 || tokens->type == 4)
-        {
-            char *expanded = expand_token(tokens->value, env_list, last_exit_status, tokens->type);
-            if (expanded)
-            {
-                char **words = split_whitespace(expanded);
-                free(tokens->value);
-                if (words && words[0])
-                {
-                    tokens->value = ft_strdup(words[0]);
-                    insert_tokens_after(tokens, words, tokens->type);
-                }
-                else
-                {
-                    tokens->value = ft_strdup(""); 
-                }
-                free_token_array(words);
-                free(expanded);
-            }
-        }
-        tokens = tokens->next;
-    }
-}
+	char	*expanded;
+	char	**words;
 
+	while (tokens)
+	{
+		if (tokens->type == 1 || tokens->type == 4)
+		{
+			expanded = expand_token(tokens->value, env_list, last_exit_status,
+					tokens->type);
+			if (expanded)
+			{
+				words = split_whitespace(expanded);
+				free(tokens->value);
+				if (words && words[0])
+				{
+					tokens->value = ft_strdup(words[0]);
+					insert_tokens_after(tokens, words, tokens->type);
+				}
+				else
+				{
+					tokens->value = ft_strdup("");
+				}
+				free_token_array(words);
+				free(expanded);
+			}
+		}
+		tokens = tokens->next;
+	}
+}

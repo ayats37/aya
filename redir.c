@@ -42,7 +42,7 @@ void	handle_heredoc_redir(t_token *redir)
 		if (dup2(redir->fd, STDIN_FILENO) == -1)
 		{
 			write_error_no_exit(NULL, "dup2 failed");
-			return;
+			return ;
 		}
 		close(redir->fd);
 	}

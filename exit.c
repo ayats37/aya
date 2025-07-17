@@ -12,7 +12,6 @@
 
 #include "minishell.h"
 
-
 int	check_exit_args(char **cmd)
 {
 	int	argc;

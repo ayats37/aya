@@ -10,7 +10,6 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-
 #include "minishell.h"
 
 char	*get_home_path(char **cmd, char *oldpwd)
@@ -94,8 +93,8 @@ int	ft_cd(char **cmd, t_env *envlist)
 
 	cwd = getcwd(NULL, 0);
 	if (!cwd)
-		return (printf("minishell: cd: error retrieving current directory\n")
-			, 1);
+		return (printf("minishell: cd: error retrieving current directory\n"),
+			1);
 	oldpwd = ft_strdup(cwd);
 	free(cwd);
 	path = get_cd_path(cmd, oldpwd);

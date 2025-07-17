@@ -6,12 +6,11 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/09 15:45:13 by ouel-afi          #+#    #+#             */
-/*   Updated: 2025/07/17 16:30:35 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 18:38:28 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
 
 t_token	*create_token(char *value, char quote, int has_space)
 {
@@ -27,7 +26,7 @@ t_token	*create_token(char *value, char quote, int has_space)
 	}
 	// if (!token->value){
 	// 	free(token);
-	// 	return NULL;
+	// 	return (NULL);
 	// }
 	if (quote == '\'')
 		token->type = 3;
@@ -175,11 +174,12 @@ void	append_token(t_token **head, t_token *token)
 
 t_token	*handle_quote(t_lexer *lexer, char quote)
 {
-	t_token *token = NULL;
+	t_token	*token;
 	size_t	length;
 	size_t	start;
 	char	*value;
 
+	token = NULL;
 	lexer->position += 1;
 	start = lexer->position;
 	while (lexer->position < lexer->length
@@ -204,7 +204,7 @@ t_token	*handle_quote(t_lexer *lexer, char quote)
 t_token	*handle_operations(t_lexer *lexer, char *oper, int i)
 {
 	char	*str;
-	t_token *token;
+	t_token	*token;
 
 	str = ft_substr(oper, 0, i);
 	if (!str)
@@ -214,7 +214,7 @@ t_token	*handle_operations(t_lexer *lexer, char *oper, int i)
 		token = create_token(str, str[0], 1);
 	else
 		token = create_token(str, str[0], 0);
-	free(str); 
+	free(str);
 	return (token);
 }
 
@@ -247,14 +247,12 @@ t_token	*get_next_token(t_lexer *lexer)
 	current = lexer->input + lexer->position;
 	if (current[0] == '\'' || current[0] == '"')
 		return (handle_quote(lexer, *current));
-	if ((lexer->input[lexer->position] == '|'
-			&& lexer->input[lexer->position + 1] == '|')
-		|| (lexer->input[lexer->position] == '&'
+	if ((lexer->input[lexer->position] == '|' && lexer->input[lexer->position
+			+ 1] == '|') || (lexer->input[lexer->position] == '&'
 			&& lexer->input[lexer->position + 1] == '&'))
 		return (handle_operations(lexer, current, 2));
-	if ((lexer->input[lexer->position] == '>'
-			&& lexer->input[lexer->position + 1] == '>')
-		|| (lexer->input[lexer->position] == '<'
+	if ((lexer->input[lexer->position] == '>' && lexer->input[lexer->position
+			+ 1] == '>') || (lexer->input[lexer->position] == '<'
 			&& lexer->input[lexer->position + 1] == '<'))
 		return (handle_operations(lexer, current, 2));
 	if (current[0] == '|' || current[0] == '<' || current[0] == '>'
@@ -263,11 +261,12 @@ t_token	*get_next_token(t_lexer *lexer)
 	return (handle_word(lexer));
 }
 
-int check_errors(t_token *token)
+int	check_errors(t_token *token)
 {
-	t_token *tmp;
+	t_token	*tmp;
+
 	if (!token)
-	return (1);
+		return (1);
 	if (token->type == 2)
 	{
 		printf("bash: syntax error near unexpected token `|'\n");
@@ -276,14 +275,19 @@ int check_errors(t_token *token)
 	tmp = token;
 	while (tmp)
 	{
-		if ((tmp->type == 2 || tmp->type == 5 || tmp->type == 6 || tmp->type == 7 || tmp->type == 8) && !tmp->next)
+		if ((tmp->type == 2 || tmp->type == 5 || tmp->type == 6
+				|| tmp->type == 7 || tmp->type == 8) && !tmp->next)
 		{
 			printf("bash: syntax error near unexpected token `newline'\n");
 			return (1);
 		}
-		if ((tmp->type == 5 || tmp->type == 6 || tmp->type == 7 || tmp->type == 8) && tmp->next && (tmp->next->type == 2 || tmp->next->type == 5 || tmp->next->type == 6 || tmp->next->type == 7 || tmp->next->type == 8))
+		if ((tmp->type == 5 || tmp->type == 6 || tmp->type == 7
+				|| tmp->type == 8) && tmp->next && (tmp->next->type == 2
+				|| tmp->next->type == 5 || tmp->next->type == 6
+				|| tmp->next->type == 7 || tmp->next->type == 8))
 		{
-			printf("bash: syntax error near unexpected token `%s'\n", tmp->next->value);
+			printf("bash: syntax error near unexpected token `%s'\n",
+					tmp->next->value);
 			return (1);
 		}
 		tmp = tmp->next;
@@ -300,8 +304,14 @@ void	print_linked_list(t_token *token_list)
 	current = token_list;
 	while (current)
 	{
-		printf("token->value = %s		token->type =%d			token->has_space = %d		token->expand_heredoc = %d\n",
-			current->value, current->type, current->has_space, current->expand_heredoc);
+		printf("token->value =
+											%s		token->type =%d			token->has_space =
+											%d		token->expand_heredoc =
+											%d\n",
+				current->value,
+				current->type,
+				current->has_space,
+				current->expand_heredoc);
 		if (current->cmds)
 		{
 			printf("  cmds: ");
@@ -319,7 +329,8 @@ void	print_linked_list(t_token *token_list)
 			redir_tmp = current->redir;
 			while (redir_tmp)
 			{
-				printf("[type:%d value:%s] ", redir_tmp->type, redir_tmp->value);
+				printf("[type:%d value:%s] ", redir_tmp->type,
+						redir_tmp->value);
 				redir_tmp = redir_tmp->next;
 			}
 			printf("\n");
@@ -328,87 +339,100 @@ void	print_linked_list(t_token *token_list)
 	}
 }
 
-t_token *get_cmd_and_redir(t_token *token_list)
+t_token	*get_cmd_and_redir(t_token *token_list)
 {
-    t_token *final_token = NULL;
-    t_token *tmp = token_list;
-    t_token *pipe;
+	t_token	*final_token;
+	t_token	*tmp;
+	t_token	*pipe;
+	t_token	*cmd_token;
+	char	**cmds;
+	t_token	*redir_head;
+	t_token	*redir_tail;
+	int		cmd_count;
+	int		cmd_capacity;
+	char	**new_cmds;
+	t_token	*redir_op;
+	t_token	*redir_target;
+	t_token	*redir_token;
 
-    while (tmp)
-    {
-        if (tmp->type != PIPE)
-        {
-            t_token *cmd_token = NULL;
-            char **cmds = NULL;
-            t_token *redir_head = NULL;
-            t_token *redir_tail = NULL;
-            int cmd_count = 0;
-            int cmd_capacity = 8;
-
-            cmds = malloc(sizeof(char *) * cmd_capacity);
-            if (!cmds)
-                return NULL;
-
-            while (tmp && tmp->type != PIPE)
-            {
-                if (tmp->type == CMD || tmp->type == SINGLE_QUOTE || tmp->type == DOUBLE_QUOTE)
-                {
-                    if (cmd_count >= cmd_capacity)
-                    {
-                        cmd_capacity *= 2;
-                        char **new_cmds = realloc(cmds, sizeof(char *) * cmd_capacity);
-                        if (!new_cmds)
-                        {
-                            free(cmds);
-                            return NULL;
-                        }
-                        cmds = new_cmds;
-                    }
-                    cmds[cmd_count++] = strdup(tmp->value);
-                    tmp = tmp->next;
-                }
-                else if (tmp->type == REDIR_IN || tmp->type == REDIR_OUT || tmp->type == APPEND || tmp->type == HEREDOC)
-                {
-                    t_token *redir_op = tmp;
-                    t_token *redir_target = tmp->next;
-                    if (!redir_target)
-                        break;
-                    t_token *redir_token = create_token(redir_target->value, 0, redir_target->has_space);
-                    redir_token->type = redir_op->type;
-                    if (!redir_head)
-                        redir_head = redir_token;
-                    else
-                        redir_tail->next = redir_token;
-                    redir_tail = redir_token;
-                    tmp = redir_target->next;
-                }
-                else
-                    tmp = tmp->next;
-            }
-            cmds[cmd_count] = NULL;
-            if (cmds && cmds[0])
-            {
-                cmd_token = create_token(cmds[0], 0, 0);
-                cmd_token->type = CMD;
-            }
-            else
-            {
-                cmd_token = create_token("", 0, 0);
-                cmd_token->type = CMD;
-            }
-            cmd_token->cmds = cmds;
-            cmd_token->redir = redir_head;
-            append_token(&final_token, cmd_token);
-        }
-        else if (tmp && tmp->type == PIPE)
-        {
-            pipe = create_token(tmp->value, 0, tmp->has_space);
-            pipe->type = PIPE;
-            append_token(&final_token, pipe);
-            tmp = tmp->next;
-        }
-    }
-    return final_token;
+	final_token = NULL;
+	tmp = token_list;
+	while (tmp)
+	{
+		if (tmp->type != PIPE)
+		{
+			cmd_token = NULL;
+			cmds = NULL;
+			redir_head = NULL;
+			redir_tail = NULL;
+			cmd_count = 0;
+			cmd_capacity = 8;
+			cmds = malloc(sizeof(char *) * cmd_capacity);
+			if (!cmds)
+				return (NULL);
+			while (tmp && tmp->type != PIPE)
+			{
+				if (tmp->type == CMD || tmp->type == SINGLE_QUOTE
+					|| tmp->type == DOUBLE_QUOTE)
+				{
+					if (cmd_count >= cmd_capacity)
+					{
+						cmd_capacity *= 2;
+						new_cmds = realloc(cmds, sizeof(char *) * cmd_capacity);
+						if (!new_cmds)
+						{
+							free(cmds);
+							return (NULL);
+						}
+						cmds = new_cmds;
+					}
+					cmds[cmd_count++] = strdup(tmp->value);
+					tmp = tmp->next;
+				}
+				else if (tmp->type == REDIR_IN || tmp->type == REDIR_OUT
+						|| tmp->type == APPEND || tmp->type == HEREDOC)
+				{
+					redir_op = tmp;
+					redir_target = tmp->next;
+					if (!redir_target)
+						break ;
+					redir_token = create_token(redir_target->value, 0,
+							redir_target->has_space);
+					redir_token->type = redir_op->type;
+					if (!redir_head)
+						redir_head = redir_token;
+					else
+						redir_tail->next = redir_token;
+					redir_tail = redir_token;
+					tmp = redir_target->next;
+				}
+				else
+					tmp = tmp->next;
+			}
+			cmds[cmd_count] = NULL;
+			if (cmds && cmds[0])
+			{
+				cmd_token = create_token(cmds[0], 0, 0);
+				cmd_token->type = CMD;
+			}
+			else
+			{
+				cmd_token = create_token("", 0, 0);
+				cmd_token->type = CMD;
+			}
+			cmd_token->cmds = cmds;
+			cmd_token->redir = redir_head;
+			append_token(&final_token, cmd_token);
+		}
+		else if (tmp && tmp->type == PIPE)
+		{
+			pipe = create_token(tmp->value, 0, tmp->has_space);
+			pipe->type = PIPE;
+			append_token(&final_token, pipe);
+			tmp = tmp->next;
+		}
+	}
+	return (final_token);
 }
 
 void	handler(int sig)
@@ -420,17 +444,20 @@ void	handler(int sig)
 	rl_redisplay();
 }
 
-void join_tokens(t_token **tokens)
+void	join_tokens(t_token **tokens)
 {
-	t_token *tmp;
-	t_token *del;
-	int is_expand;
-	char *new_value;
-	
+	t_token	*tmp;
+	t_token	*del;
+	int		is_expand;
+	char	*new_value;
+
 	tmp = *tokens;
 	while (tmp)
 	{
-		if (tmp->has_space == 0 && tmp->next && ((tmp->type == 3 || tmp->type == 4 || tmp->type == 1) && (tmp->next->type == 3 || tmp->next->type == 4 || tmp->next->type == 1)))
+		if (tmp->has_space == 0 && tmp->next && ((tmp->type == 3
+					|| tmp->type == 4 || tmp->type == 1)
+				&& (tmp->next->type == 3 || tmp->next->type == 4
+					|| tmp->next->type == 1)))
 		{
 			is_expand = tmp->expand_heredoc;
 			new_value = ft_strjoin(tmp->value, tmp->next->value);
@@ -440,27 +467,27 @@ void join_tokens(t_token **tokens)
 			tmp->expand_heredoc = is_expand;
 			tmp->has_space = tmp->next->has_space;
 			del = tmp->next;
-			tmp->next = del->next; 
+			tmp->next = del->next;
 		}
 		else
 			tmp = tmp->next;
 	}
 }
 
-void    reset_terminal_mode(void)
+void	reset_terminal_mode(void)
 {
-    struct termios    term;
+	struct termios	term;
 
-    tcgetattr(STDIN_FILENO, &term);
-    term.c_lflag |= (ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
-    write(STDERR_FILENO, "\r\033[K", 4);
-    tcgetattr(STDIN_FILENO, &term);
-    term.c_lflag &= ~(ECHOCTL);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+	tcgetattr(STDIN_FILENO, &term);
+	term.c_lflag |= (ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &term);
+	write(STDERR_FILENO, "\r\033[K", 4);
+	tcgetattr(STDIN_FILENO, &term);
+	term.c_lflag &= ~(ECHOCTL);
+	tcsetattr(STDIN_FILENO, TCSANOW, &term);
 }
 
-int main(int ac, char **av, char **env)
+int	main(int ac, char **av, char **env)
 {
 	// int last_exit_status = 0;
 	t_lexer *lexer = NULL;
@@ -478,12 +505,12 @@ int main(int ac, char **av, char **env)
 		if (!input)
 		{
 			write(1, "exit\n", 5);
-			break;
+			break ;
 		}
-			if (input[0] == '\0')
+		if (input[0] == '\0')
 		{
 			free(input);
-			continue;
+			continue ;
 		}
 		add_history(input);
 		token_list = NULL;
@@ -492,7 +519,7 @@ int main(int ac, char **av, char **env)
 		{
 			token = get_next_token(lexer);
 			if (!token)
-			continue;
+				continue ;
 			token->type = token_type(token);
 			append_token(&token_list, token);
 		}
@@ -501,13 +528,14 @@ int main(int ac, char **av, char **env)
 		if (!token_list)
 		{
 			free(input);
-			continue;
+			continue ;
 		}
 		if (check_errors(token_list) == 1)
 		{
+			last_exit_status = 258;
 			free(input);
 			free_token_list(token_list);
-			continue;
+			continue ;
 		}
 		expand_variables(token_list, env_list, last_exit_status);
 		join_tokens(&token_list);

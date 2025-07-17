@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:50:56 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:50:57 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 18:44:45 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,8 @@ int	parse_export_arg(char *arg, char **name, char **value, int *append)
 	*append = 0;
 	equal_sign = ft_strchr(arg, '=');
 	if (equal_sign == arg)
-		return (printf("minishell: export: `%s': not a valid identifier\n", arg)
-			, 1);
+		return (printf("minishell: export: `%s': not a valid identifier\n",
+				arg), 1);
 	if (equal_sign > arg + 1 && *(equal_sign - 1) == '+')
 	{
 		*append = 1;
@@ -50,8 +50,8 @@ int	parse_export_arg(char *arg, char **name, char **value, int *append)
 	{
 		if (*name)
 			free(*name);
-		return (printf("minishell: export: `%s': not a valid identifier\n", arg)
-			, 1);
+		return (printf("minishell: export: `%s': not a valid identifier\n",
+				arg), 1);
 	}
 	*value = ft_strdup(equal_sign + 1);
 	return (0);
@@ -76,8 +76,8 @@ int	process_export(char *arg, t_env **env_list)
 
 int	ft_export(char **cmd, t_env **env_list)
 {
-	int		status;
-	int		i;
+	int	status;
+	int	i;
 
 	status = 0;
 	i = 1;
@@ -91,9 +91,8 @@ int	ft_export(char **cmd, t_env **env_list)
 			status = 1;
 		}
 		else if (process_export(cmd[i], env_list) != 0)
-		status = 1;
+			status = 1;
 		i++;
 	}
-		
 	return (status);
 }
