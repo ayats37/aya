@@ -6,13 +6,13 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:51:18 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:51:19 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 16:28:53 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int execute_pipeline(t_token *token, t_env **env_list)
+int execute_pipeline(t_token *token, t_env **env_list, int *last_exit_status)
 {
     int cmd_count = 0;
     t_token *tmp = token;
@@ -22,14 +22,18 @@ int execute_pipeline(t_token *token, t_env **env_list)
             cmd_count++;
         tmp = tmp->next;
     }
-    
+
     if (cmd_count <= 1)
     {
         if (is_builtin(token->cmds[0]))
-            return execute_builtin(token, env_list);
+        {
+            *last_exit_status = execute_builtin(token, env_list);
+            return *last_exit_status;
+        }
         else
-            return execute_cmd(token->cmds, *env_list, token);
+            return execute_cmd(token->cmds, *env_list, token, last_exit_status);
     }
+
     int pipes[cmd_count - 1][2];
     pid_t pids[cmd_count];
     for (int i = 0; i < cmd_count - 1; i++)
@@ -37,9 +41,11 @@ int execute_pipeline(t_token *token, t_env **env_list)
         if (pipe(pipes[i]) == -1)
         {
             write_error_no_exit(NULL, "pipe failed");
+            *last_exit_status = 1;
             return 1;
         }
     }
+
     tmp = token;
     int cmd_index = 0;
     while (tmp && cmd_index < cmd_count)
@@ -50,9 +56,10 @@ int execute_pipeline(t_token *token, t_env **env_list)
             if (pids[cmd_index] == -1)
             {
                 write_error_no_exit(NULL, "fork failed");
+                *last_exit_status = 1;
                 return 1;
             }
-            
+
             if (pids[cmd_index] == 0)
             {
                 if (cmd_index > 0)
@@ -67,17 +74,19 @@ int execute_pipeline(t_token *token, t_env **env_list)
                 if (is_builtin(tmp->cmds[0]))
                     exit(execute_builtin(tmp, env_list));
                 else
-                    exit(execute_cmd(tmp->cmds, *env_list, tmp));
+                    exit(execute_cmd(tmp->cmds, *env_list, tmp, last_exit_status));
             }
             cmd_index++;
         }
         tmp = tmp->next;
     }
+
     for (int i = 0; i < cmd_count - 1; i++)
     {
         close(pipes[i][0]);
         close(pipes[i][1]);
     }
+
     int status = 0;
     for (int i = 0; i < cmd_count; i++)
     {
@@ -86,9 +95,13 @@ int execute_pipeline(t_token *token, t_env **env_list)
         if (i == cmd_count - 1)
             status = temp_status;
     }
+
     if (WIFEXITED(status))
-        return (WEXITSTATUS(status));
+        *last_exit_status = WEXITSTATUS(status);
     else if (WIFSIGNALED(status))
-        return (128 + WTERMSIG(status));
-    return 1;
+        *last_exit_status = 128 + WTERMSIG(status);
+    else
+        *last_exit_status = 1;
+
+    return *last_exit_status;
 }

@@ -60,8 +60,8 @@ typedef struct s_env
 int	is_builtin(char *cmd);
 int	dispatch_builtin(char **cmd, t_env **envlist);
 int	execute_builtin(t_token *node, t_env **envlist);
-int	execute_cmd(char **cmds, t_env *envlist, t_token *node);
-int execute_cmds(t_token *token, t_env **env_list);
+int execute_cmds(t_token *token, t_env **env_list, int *last_exit_status);
+int execute_pipeline(t_token *token, t_env **env_list, int *last_exit_status);
 char	*get_path(t_env *envlist);
 char	**get_paths(t_env **envlist);
 char	*build_path(char *path, char *cmd);
@@ -71,7 +71,7 @@ int	handle_output_redir(t_token *redir);
 void	handle_heredoc_redir(t_token *redir);
 int	handle_input_redir(t_token *redir);
 int	handle_redirection(t_token *node);
-int execute_pipeline(t_token *token, t_env **env_list);
+int	execute_cmd(char **cmds, t_env *envlist, t_token *node, int *last_exit_status);
 void	write_error_no_exit(char *command, char *message);
 
 void	write_error(char *command, char *message);

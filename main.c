@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/09 15:45:13 by ouel-afi          #+#    #+#             */
-/*   Updated: 2025/07/17 15:36:53 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 16:30:35 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -514,7 +514,7 @@ int main(int ac, char **av, char **env)
 		final_token = get_cmd_and_redir(token_list);
 		process_heredoc(final_token);
 		close_heredoc_fds(final_token);
-		execute_cmds(final_token, &env_list);
+		execute_cmds(final_token, &env_list, &last_exit_status);
 		// print_linked_list(final_token);
 	}
 }

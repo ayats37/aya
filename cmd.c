@@ -6,13 +6,13 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:50:21 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:50:23 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 16:28:24 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
+int	execute_cmd(char **cmds, t_env *envlist, t_token *node, int *last_exit_status)
 {
 	pid_t	pid;
 	int		status;
@@ -21,11 +21,15 @@ int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
 	int		redir_result;
 
 	if (!cmds || !cmds[0] || cmds[0][0] == '\0')
+	{
+		*last_exit_status = 0;
 		return (0);
+	}
 	pid = fork();
 	if (pid == -1)
 	{
 		write_error_no_exit(cmds[0], "fork failed");
+		*last_exit_status = 1;
 		return (1);
 	}
 	if (pid == 0)
@@ -35,7 +39,7 @@ int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
 			redir_result = handle_redirection(node);
 			if (redir_result != 0)
 				exit(redir_result);
-		}	
+		}
 		full_path = find_cmd_path(cmds[0], &envlist);
 		if (!full_path)
 		{
@@ -54,7 +58,7 @@ int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
 			free(full_path);
 			write_error_no_exit(cmds[0], "environment conversion failed");
 			exit(1);
-		}	
+		}
 		execve(full_path, cmds, env_array);
 		free(full_path);
 		free_env_array(env_array);
@@ -63,8 +67,10 @@ int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
 	}
 	waitpid(pid, &status, 0);
 	if (WIFEXITED(status))
-		return (WEXITSTATUS(status));
+		*last_exit_status = WEXITSTATUS(status);
 	else if (WIFSIGNALED(status))
-		return (128 + WTERMSIG(status));
-	return (1);
+		*last_exit_status = 128 + WTERMSIG(status);
+	else
+		*last_exit_status = 1;
+	return (*last_exit_status);
 }
