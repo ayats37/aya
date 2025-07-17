@@ -135,5 +135,9 @@ void expand_variables(t_token *tokens, t_env *env_list, int last_exit_status);
 char *expand_token(char *str, t_env *env_list, int last_exit_status, int type);
 char *get_var_name(char *str, int *i);
 char *get_env(t_env *env_list, const char *name);
+void	free_token_array(char **tokens);
+char	**split_whitespace(char *str);
+void insert_tokens_after(t_token *token, char **words, int type);
+
 
 #endif
