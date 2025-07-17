@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/09 15:45:13 by ouel-afi          #+#    #+#             */
-/*   Updated: 2025/07/17 13:56:33 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 15:36:53 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -470,6 +470,7 @@ int main(int ac, char **av, char **env)
 	char *input = NULL;
 	(void)ac;
 	(void)av;
+	int last_exit_status = 0;
 	t_env *env_list = init_env(env);
 	while (1)
 	{
@@ -508,7 +509,7 @@ int main(int ac, char **av, char **env)
 			free_token_list(token_list);
 			continue;
 		}
-		expand_variables(&token_list, env_list);
+		expand_variables(token_list, env_list, last_exit_status);
 		join_tokens(&token_list);
 		final_token = get_cmd_and_redir(token_list);
 		process_heredoc(final_token);

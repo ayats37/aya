@@ -131,10 +131,9 @@ int	ft_cd(char **cmd, t_env *envlist);
 void	handler(int sig);
 void    reset_terminal_mode(void);
 
-void expand_variables(t_token **token_list, t_env *env_list);
-void to_expand(t_token *tmp, t_env *env_list);
-void replace_var(t_token *tmp, int i, char *env, int len);
-char *get_var(char *value, int i);
-char *get_env_var(t_env *env_list, char *name);
+void expand_variables(t_token *tokens, t_env *env_list, int last_exit_status);
+char *expand_token(char *str, t_env *env_list, int last_exit_status, int type);
+char *get_var_name(char *str, int *i);
+char *get_env(t_env *env_list, const char *name);
 
 #endif

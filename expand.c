@@ -6,25 +6,13 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:52:17 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 14:27:14 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/17 15:48:45 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char *get_var(char *value, int i)
-{
-	int len = 0;
-	int start = i;
-	while (value[i] && (is_alphanumeric(value[i]) || value[i] == '_'))
-	{
-		len++;
-		i++;
-	}
-	return (ft_substr(value, start, len));
-}
-
-char *get_env_var(t_env *env_list, char *name)
+char *get_env(t_env *env_list, const char *name)
 {
     while (env_list)
     {
@@ -35,71 +23,86 @@ char *get_env_var(t_env *env_list, char *name)
     return NULL;
 }
 
-void replace_var(t_token *tmp, int i, char *env, int len)
+
+char *get_var_name(char *str, int *i)
 {
-	char *start = ft_substr(tmp->value, 0, i);
-	char *end = ft_strdup(tmp->value + i + 1 + len);
-	char *new = ft_strjoin(start, env);
-	char *value = ft_strjoin(new, end);
-	free(tmp->value);
-	tmp->value = value;
-	free(start);
-	free(end);
-	free(new);
+    int start = *i;
+    while (str[*i] && (ft_isalnum(str[*i]) || str[*i] == '_'))
+        (*i)++;
+    return ft_substr(str, start, *i - start);
 }
 
-void to_expand(t_token *tmp, t_env *env_list)
+char *expand_token(char *str, t_env *env_list, int last_exit_status, int type)
 {
-	char *var_name = NULL;
-	char *env_value = NULL;
-	int i = 0;
-	while (tmp->value[i])
-	{
-		if (tmp->value[i] == '$' && (tmp->value[i + 1] == '$' || tmp->value[i + 1] == '\0'))
-		{
-			i++;
-			if (tmp->value[i] == '\0')
-				break;
-		}
-		else if (tmp->value[i] == '$')
-		{
-			if (tmp->value[i + 1] == '?')
-				i++;
-			else
-			{	
-				var_name = get_var(tmp->value, i + 1);
-				env_value = get_env_var(env_list, var_name);
-				if (env_value)
-				{
-					replace_var(tmp, i, env_value, ft_strlen(var_name));
-					i += ft_strlen(var_name);	
-				}
-				else
-					replace_var(tmp, i, "", ft_strlen(var_name));
-			}
-			free(var_name);
-		}
-		i++;
-	}
+    int i = 0;
+    char *result = ft_strdup("");
+    char *tmp = NULL;
+
+    if (!result)
+        return NULL;
+
+    while (str[i])
+    {
+        if (str[i] == '$' && type != 3)
+        {
+            i++;
+            if (str[i] == '?')
+            {
+                tmp = ft_itoa(last_exit_status);
+                i++;
+            }
+            else if (str[i] && (ft_isalpha(str[i]) || str[i] == '_'))
+            {
+                char *var_name = get_var_name(str, &i);
+                char *val = get_env(env_list, var_name);
+                if (val != NULL)
+                    tmp = ft_strdup(val);
+                else
+                    tmp = ft_strdup("");
+                free(var_name);
+            }
+            else
+            {
+                tmp = ft_strdup("$");
+            }
+        }
+        else
+        {
+            tmp = ft_substr(str, i, 1);
+            i++;
+        }
+
+        if (!tmp)
+        {
+            free(result);
+            return NULL;
+        }
+
+        char *new_result = ft_strjoin(result, tmp);
+        free(tmp);
+        free(result);
+        result = new_result;
+
+        if (!result)
+            return NULL;
+    }
+
+    return result;
 }
 
-void expand_variables(t_token **token_list, t_env *env_list)
+void expand_variables(t_token *tokens, t_env *env_list, int last_exit_status)
 {
-	if (!token_list)
-		return ;
-	t_token *tmp = *token_list;
-	while (tmp)
-	{
-		if (tmp->type == 8 && tmp->next)
-		{
-			tmp = tmp->next;
-			if (tmp->next && (tmp->type == 3 || tmp->type == 4 || tmp->next->type == 3 || tmp->next->type == 4))
-				tmp->expand_heredoc = 0;
-			else
-				tmp->expand_heredoc = 1;
-		}
-		else if (tmp->type == 1 || tmp->type == 4)
-			to_expand(tmp, env_list);
-		tmp = tmp->next; 		
-	}
+    while (tokens)
+    {
+        if (tokens->type == 1 || tokens->type == 4)
+        {
+            char *expanded = expand_token(tokens->value, env_list, last_exit_status, tokens->type);
+            if (expanded)
+            {
+                free(tokens->value);
+                tokens->value = expanded;
+            }
+        }
+        tokens = tokens->next;
+    }
 }
