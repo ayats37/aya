@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   check_path.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/06/22 10:52:12 by taya              #+#    #+#             */
+/*   Updated: 2025/07/17 13:50:17 by taya             ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minishell.h"
 
 char	*get_path(t_env *envlist)
@@ -53,7 +65,7 @@ char	*check_paths(char **paths, char *cmd)
 
 	if ((cmd[0] == '.' && cmd[1] == '/') || cmd[0] == '/')
 	{
-		if (access(cmd, F_OK) == 0)
+		if (access(cmd, F_OK | X_OK) == 0)
 			return (ft_strdup(cmd));
 		return (NULL);
 	}
@@ -63,7 +75,7 @@ char	*check_paths(char **paths, char *cmd)
 		full_path = build_path(paths[i], cmd);
 		if (!full_path)
 			return (NULL);
-		if (access(full_path, F_OK) == 0)
+		if (access(full_path, F_OK | X_OK) == 0)
 			return (full_path);
 		free(full_path);
 		i++;

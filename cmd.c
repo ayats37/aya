@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   cmd.c                                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/07/17 13:50:21 by taya              #+#    #+#             */
+/*   Updated: 2025/07/17 13:50:23 by taya             ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minishell.h"
 
 int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
@@ -50,7 +62,6 @@ int	execute_cmd(char **cmds, t_env *envlist, t_token *node)
 		exit(127);
 	}
 	waitpid(pid, &status, 0);
-	
 	if (WIFEXITED(status))
 		return (WEXITSTATUS(status));
 	else if (WIFSIGNALED(status))
