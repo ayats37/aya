@@ -6,203 +6,151 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:52:17 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 17:41:20 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 14:59:06 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char	*get_env(t_env *env_list, const char *name)
+void split_expanded_tokens(t_token **head)
 {
-	while (env_list)
+	t_token *current = *head;
+
+	while (current)
 	{
-		if (strcmp(env_list->name, name) == 0)
-			return (env_list->value);
-		env_list = env_list->next;
-	}
-	return (NULL);
-}
-
-char	*get_var_name(char *str, int *i)
-{
-	int	start;
-
-	start = *i;
-	while (str[*i] && (ft_isalnum(str[*i]) || str[*i] == '_'))
-		(*i)++;
-	return (ft_substr(str, start, *i - start));
-}
-
-void	free_token_array(char **tokens)
-{
-	int	i;
-
-	i = 0;
-	while (tokens && tokens[i])
-		free(tokens[i++]);
-	free(tokens);
-}
-
-char	**split_whitespace(char *str)
-{
-	char	**words;
-	int		count;
-	int		i;
-	int		j;
-	int		k;
-
-	count = 0;
-	i = 0;
-	if (!str || !*str)
-		return (NULL);
-	while (str[i])
-	{
-		while (str[i] && (str[i] == ' ' || str[i] == '\t'))
-			i++;
-		if (str[i])
+		if (current->expand == 1 && current->value && strchr(current->value, ' '))
 		{
-			count++;
-			while (str[i] && str[i] != ' ' && str[i] != '\t')
-				i++;
-		}
-	}
-	if (count == 0)
-		return (NULL);
-	words = malloc(sizeof(char *) * (count + 1));
-	if (!words)
-		return (NULL);
-	i = 0;
-	k = 0;
-	while (str[i] && k < count)
-	{
-		while (str[i] && (str[i] == ' ' || str[i] == '\t'))
-			i++;
-		if (str[i])
-		{
-			j = i;
-			while (str[j] && str[j] != ' ' && str[j] != '\t')
-				j++;
-			words[k] = strndup(&str[i], j - i);
-			if (!words[k])
+			char **words = ft_split(current->value, ' ');
+			if (!words)
+				return;
+			free(current->value);
+			current->value = strdup(words[0]);
+
+			t_token *prev = current;
+			int i = 1;
+			while (words[i])
 			{
-				while (k > 0)
-					free(words[--k]);
-				free(words);
-				return (NULL);
-			}
-			k++;
-			i = j;
-		}
-	}
-	words[k] = NULL;
-	return (words);
-}
+				t_token *new = malloc(sizeof(t_token));
+				if (!new)
+					break;
+				new->value = strdup(words[i]);
+				new->type = current->type;
+				new->expand = 0;
+				new->has_space = 0;
+				new->expand_heredoc = 0;
+				new->cmds = NULL;
+				new->redir = NULL;
+				new->next = prev->next;
+				new->prev = prev;
+				if (prev->next)
+					prev->next->prev = new;
+				prev->next = new;
 
-void	insert_tokens_after(t_token *token, char **words, int type)
-{
-	t_token	*curr;
-	t_token	*new;
-
-	curr = token;
-	for (int i = 1; words[i]; i++)
-	{
-		new = malloc(sizeof(t_token));
-		if (!new)
-			return ;
-		new->value = ft_strdup(words[i]);
-		new->type = type;
-		new->next = curr->next;
-		curr->next = new;
-		curr = new;
-	}
-}
-
-char	*expand_token(char *str, t_env *env_list, int last_exit_status,
-		int type)
-{
-	int		i;
-	char	*result;
-	char	*tmp;
-	char	*var_name;
-	char	*val;
-	char	*new_result;
-
-	i = 0;
-	result = ft_strdup("");
-	tmp = NULL;
-	if (!result)
-		return (NULL);
-	while (str[i])
-	{
-		if (str[i] == '$' && type != 3)
-		{
-			i++;
-			if (str[i] == '?')
-			{
-				tmp = ft_itoa(last_exit_status);
+				prev = new;
 				i++;
 			}
-			else if (str[i] && (ft_isalpha(str[i]) || str[i] == '_'))
+			i = 0;
+			while (words[i])
+				free(words[i++]);
+			free(words);
+		}
+		current = current->next;
+	}
+}
+char *get_var(char *value, int i)
+{
+	int len = 0;
+	int start = i;
+	while (value[i] && (is_alphanumeric(value[i]) || value[i] == '_'))
+	{
+		len++;
+		i++;
+	}
+	return (ft_substr(value, start, len));
+}
+
+char *get_env_var(t_env *env_list, char *name)
+{
+    while (env_list)
+    {
+        if (strcmp(env_list->name, name) == 0)
+            return env_list->value;
+        env_list = env_list->next;
+    }
+    return NULL;
+}
+
+void replace_var(t_token *tmp, int i, char *env, int len)
+{
+	char *start = ft_substr(tmp->value, 0, i);
+	char *end = ft_strdup(tmp->value + i + 1 + len);
+	char *new = ft_strjoin(start, env);
+	char *value = ft_strjoin(new, end);
+	free(tmp->value);
+	tmp->value = value;
+	free(start);
+	free(end);
+	free(new);
+}
+
+void to_expand(t_token *tmp, t_env *env_list)
+{
+	char *var_name = NULL;
+	char *env_value = NULL;
+	int i = 0;
+	while (tmp->value[i])
+	{
+		if (tmp->value[i] == '$' && (tmp->value[i + 1] == '$' || tmp->value[i + 1] == '\0'))
+		{
+			i++;
+			if (tmp->value[i] == '\0')
+				break;
+		}
+		else if (tmp->value[i] == '$')
+		{
+			tmp->expand = 1;
+			if (tmp->value[i + 1] == '?')
 			{
-				var_name = get_var_name(str, &i);
-				val = get_env(env_list, var_name);
-				if (val != NULL)
-					tmp = ft_strdup(val);
-				else
-					tmp = ft_strdup("");
-				free(var_name);
+				// get_exit_status();
+				i++;
 			}
 			else
-				tmp = ft_strdup("$");
-		}
-		else
-		{
-			tmp = ft_substr(str, i, 1);
-			i++;
-		}
-		if (!tmp)
-		{
-			free(result);
-			return (NULL);
-		}
-		new_result = ft_strjoin(result, tmp);
-		free(tmp);
-		free(result);
-		result = new_result;
-		if (!result)
-			return (NULL);
-	}
-	return (result);
-}
-
-void	expand_variables(t_token *tokens, t_env *env_list, int last_exit_status)
-{
-	char	*expanded;
-	char	**words;
-
-	while (tokens)
-	{
-		if (tokens->type == 1 || tokens->type == 4)
-		{
-			expanded = expand_token(tokens->value, env_list, last_exit_status,
-					tokens->type);
-			if (expanded)
-			{
-				words = split_whitespace(expanded);
-				free(tokens->value);
-				if (words && words[0])
+			{	
+				var_name = get_var(tmp->value, i + 1);
+				env_value = get_env_var(env_list, var_name);
+				if (env_value)
 				{
-					tokens->value = ft_strdup(words[0]);
-					insert_tokens_after(tokens, words, tokens->type);
+					replace_var(tmp, i, env_value, ft_strlen(var_name));
+					i += ft_strlen(var_name);	
 				}
 				else
-				{
-					tokens->value = ft_strdup("");
-				}
-				free_token_array(words);
-				free(expanded);
+					replace_var(tmp, i, "", ft_strlen(var_name));
 			}
+			free(var_name);
 		}
-		tokens = tokens->next;
+		i++;
+	}
+}
+
+void expand_variables(t_token **token_list, t_env *env_list) 
+{
+	if (!token_list)
+		return ;
+	t_token *tmp = *token_list;
+	while (tmp) 
+	{
+		if (tmp->type == 8 && tmp->next)
+		{
+			tmp = tmp->next;
+			if (tmp->next && (tmp->type == 3 || tmp->type == 4 || tmp->next->type == 3 || tmp->next->type == 4))
+				tmp->expand_heredoc = 0;
+			else
+				tmp->expand_heredoc = 1;
+		}
+		else if (tmp->type == 1 || tmp->type == 4){
+			// print_linked_list(tmp);
+			to_expand(tmp, env_list);
+		}
+		tmp = tmp->next; 		
 	}
 }

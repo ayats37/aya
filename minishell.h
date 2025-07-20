@@ -4,8 +4,6 @@
 # include "./libft/libft.h"
 # include <errno.h>
 # include <fcntl.h>
-# include <readline/history.h>
-# include <readline/readline.h>
 # include <signal.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -14,6 +12,8 @@
 # include <sys/wait.h>
 # include <termios.h>
 # include <unistd.h>
+# include <readline/history.h>
+# include <readline/readline.h>
 
 extern int			g_heredoc_interrupted;
 
@@ -42,6 +42,8 @@ typedef struct s_token
 	t_type			type;
 	int				has_space;
 	int				expand_heredoc;
+	int				expand;
+	struct s_token *prev;
 	char			**cmds;
 	struct s_token	*redir;
 	int				fd;
@@ -72,6 +74,7 @@ int					execute_cmds(t_token *token, t_env **env_list,
 int					execute_pipeline(t_token *token, t_env **env_list,
 						int *last_exit_status);
 char				*get_path(t_env *envlist);
+void expand_heredoc(char **line, t_env *env_list) ;
 char				**get_paths(t_env **envlist);
 char				*build_path(char *path, char *cmd);
 char				*check_paths(char **paths, char *cmd);
@@ -118,9 +121,10 @@ void				free_pipes(int **pipes, int count);
 void				free_pipeline_data(t_pipe_data *data);
 
 void				heredoc_sigint_handler(int sig);
-void				handle_heredoc_input(char *delimiter, int write_fd);
+// void				handle_heredoc_input(char *delimiter, int write_fd);
+void	handle_heredoc_input(char *delimiter, int write_fd, t_token *token, t_env *envlist);
 void				close_heredoc_fds(t_token *token);
-void				process_heredoc(t_token *token);
+void				process_heredoc(t_token *token, t_env *env_list);
 
 void				update_env(char *name, char *value, t_env **env_list);
 char				*get_env_value(char *name, t_env *env_list);
@@ -156,14 +160,11 @@ int					ft_cd(char **cmd, t_env *envlist);
 void				handler(int sig);
 void				reset_terminal_mode(void);
 
-void				expand_variables(t_token *tokens, t_env *env_list,
-						int last_exit_status);
-char				*expand_token(char *str, t_env *env_list,
-						int last_exit_status, int type);
-char				*get_var_name(char *str, int *i);
-char				*get_env(t_env *env_list, const char *name);
-void				free_token_array(char **tokens);
-char				**split_whitespace(char *str);
-void				insert_tokens_after(t_token *token, char **words, int type);
+void expand_variables(t_token **token_list, t_env *env_list);
+void to_expand(t_token *tmp, t_env *env_list);
+void replace_var(t_token *tmp, int i, char *env, int len);
+void split_expanded_tokens(t_token **head);
+char *get_env_var(t_env *env_list, char *name);
+char *get_var(char *value, int i);
 
 #endif

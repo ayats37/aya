@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:51:12 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:51:13 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 15:51:56 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,13 +22,15 @@ void	heredoc_sigint_handler(int sig)
 	exit(130);
 }
 
-void	handle_heredoc_input(char *delimiter, int write_fd)
+void	handle_heredoc_input(char *delimiter, int write_fd, t_token *token, t_env *envlist)
 {
 	char	*line;
 
 	while (1)
 	{
 		line = readline("> ");
+		// if (token->expand_heredoc == 1)
+		// 	expand_heredoc(&line, envlist);
 		if (!line)
 		{
 			write(1, " ", 1);
@@ -70,7 +72,7 @@ void	close_heredoc_fds(t_token *token)
 	}
 }
 
-void	process_heredoc(t_token *token)
+void	process_heredoc(t_token *token, t_env *env_list)
 {
 	int		status;
 	pid_t	pid;
@@ -116,7 +118,7 @@ void	process_heredoc(t_token *token)
 						close(pipe_fd[0]);
 						signal(SIGINT, heredoc_sigint_handler);
 						signal(SIGQUIT, SIG_IGN);
-						handle_heredoc_input(redir->value, pipe_fd[1]);
+						handle_heredoc_input(redir->value, pipe_fd[1], token, env_list);
 						close(pipe_fd[1]);
 						exit(0);
 					}

@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/09 15:45:13 by ouel-afi          #+#    #+#             */
-/*   Updated: 2025/07/17 18:38:28 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 15:44:59 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ t_token	*create_token(char *value, char quote, int has_space)
 	}
 	// if (!token->value){
 	// 	free(token);
-	// 	return (NULL);
+	// 	return NULL;
 	// }
 	if (quote == '\'')
 		token->type = 3;
@@ -38,7 +38,9 @@ t_token	*create_token(char *value, char quote, int has_space)
 	token->expand_heredoc = 0;
 	token->cmds = NULL;
 	token->redir = NULL;
+	token->prev = NULL;
 	token->fd = -1;
+	token->expand = -1;
 	return (token);
 }
 
@@ -56,24 +58,26 @@ void	handle_word_quote(char **result, t_lexer *lexer, int *in_quotes)
 {
 	char	quote;
 	char	*temp;
-	char	*new_result;
+	// char	*new_result;
 	size_t	start;
 
+	printf("pos1 : %d\n", lexer->position);
 	quote = lexer->input[lexer->position++];
 	start = lexer->position;
 	*in_quotes = 1;
 	while (lexer->position < lexer->length
 		&& lexer->input[lexer->position] != quote)
 		lexer->position++;
+	printf("pos2 : %d\n", lexer->position);
 	if (lexer->position >= lexer->length)
 	{
 		ft_putstr_fd("bash : syntax error unclosed quotes\n", 2);
 		return ;
 	}
 	temp = ft_substr(lexer->input, start, lexer->position - start);
-	new_result = ft_strjoin(*result, temp);
-	free(*result);
-	*result = new_result;
+	// new_result = ft_strjoin(*result, temp);
+	// free(*result);
+	*result = temp;
 	lexer->position++;
 	*in_quotes = 0;
 	free(temp);
@@ -119,7 +123,9 @@ t_token	*handle_word(t_lexer *lexer)
 	while (lexer->position < lexer->length && !is_space(lexer))
 	{
 		if (is_quote(lexer->input[lexer->position]))
-			handle_word_quote(&result, lexer, &in_quotes);
+		{
+			break;
+		}
 		else if (!in_quotes && is_special_char(lexer->input[lexer->position]))
 			break ;
 		else
@@ -304,10 +310,7 @@ void	print_linked_list(t_token *token_list)
 	current = token_list;
 	while (current)
 	{
-		printf("token->value =
-											%s		token->type =%d			token->has_space =
-											%d		token->expand_heredoc =
-											%d\n",
+		printf("token->value =%s	token->type =%d			token->has_space = %d		token->expand_heredoc = %d\n",
 				current->value,
 				current->type,
 				current->has_space,
@@ -537,10 +540,11 @@ int	main(int ac, char **av, char **env)
 			free_token_list(token_list);
 			continue ;
 		}
-		expand_variables(token_list, env_list, last_exit_status);
+		expand_variables(&token_list, env_list);
 		join_tokens(&token_list);
+		split_expanded_tokens(&token_list);
 		final_token = get_cmd_and_redir(token_list);
-		process_heredoc(final_token);
+		process_heredoc(final_token, env_list);
 		close_heredoc_fds(final_token);
 		execute_cmds(final_token, &env_list, &last_exit_status);
 		// print_linked_list(final_token);

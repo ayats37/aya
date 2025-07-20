@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:50:21 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 18:30:55 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 15:21:57 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,21 @@ int	execute_cmd(char **cmds, t_env *envlist, t_token *node,
 
 	if (!cmds || !cmds[0] || cmds[0][0] == '\0')
 	{
-		*last_exit_status = 0;
+		pid_t pid = fork();
+		if (pid == -1)
+		{
+			write_error_no_exit(NULL, "fork failed");
+			*last_exit_status = 1;
+			return (1);
+		}
+		if (pid == 0)
+		{
+			
+			if (node && node->redir)
+				handle_redirection(node);
+			exit(0);
+		}
+		handle_parent_wait(pid, last_exit_status);
 		return (0);
 	}
 	pid = fork();
