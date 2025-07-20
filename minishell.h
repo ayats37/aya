@@ -122,7 +122,7 @@ void				free_pipeline_data(t_pipe_data *data);
 
 void				heredoc_sigint_handler(int sig);
 // void				handle_heredoc_input(char *delimiter, int write_fd);
-void	handle_heredoc_input(char *delimiter, int write_fd, t_token *token, t_env *envlist);
+void	handle_heredoc_input(char *delimiter, int write_fd, int expand, t_env *envlist);
 void				close_heredoc_fds(t_token *token);
 void				process_heredoc(t_token *token, t_env *env_list);
 
@@ -166,5 +166,10 @@ void replace_var(t_token *tmp, int i, char *env, int len);
 void split_expanded_tokens(t_token **head);
 char *get_env_var(t_env *env_list, char *name);
 char *get_var(char *value, int i);
+
+char *replace_heredoc(char *line, int i, char *env, int len);
+char	*to_expand_heredoc(char *line, t_env *env_list);
+void expand_heredoc(char **line, t_env *env_list);
+
 
 #endif

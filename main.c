@@ -6,11 +6,31 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/09 15:45:13 by ouel-afi          #+#    #+#             */
-/*   Updated: 2025/07/20 15:44:59 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 17:27:23 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+
+void setup_shell_terminal(void)
+{
+    pid_t shell_pgid;
+
+    signal(SIGTTIN, SIG_IGN);
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
+    shell_pgid = getpid();
+    if (setpgid(shell_pgid, shell_pgid) < 0)
+    {
+        perror("Couldn't put the shell in its own process group");
+        exit(1);
+    }
+    if (tcsetpgrp(STDIN_FILENO, shell_pgid) < 0)
+    {
+        perror("Couldn't set terminal control");
+        exit(1);
+    }
+}
 
 t_token	*create_token(char *value, char quote, int has_space)
 {
@@ -35,7 +55,7 @@ t_token	*create_token(char *value, char quote, int has_space)
 	else
 		token->type = 0;
 	token->has_space = has_space;
-	token->expand_heredoc = 0;
+	// token->expand_heredoc = 0;
 	token->cmds = NULL;
 	token->redir = NULL;
 	token->prev = NULL;
@@ -180,12 +200,11 @@ void	append_token(t_token **head, t_token *token)
 
 t_token	*handle_quote(t_lexer *lexer, char quote)
 {
-	t_token	*token;
+	t_token *token = NULL;
 	size_t	length;
 	size_t	start;
 	char	*value;
 
-	token = NULL;
 	lexer->position += 1;
 	start = lexer->position;
 	while (lexer->position < lexer->length
@@ -253,12 +272,14 @@ t_token	*get_next_token(t_lexer *lexer)
 	current = lexer->input + lexer->position;
 	if (current[0] == '\'' || current[0] == '"')
 		return (handle_quote(lexer, *current));
-	if ((lexer->input[lexer->position] == '|' && lexer->input[lexer->position
-			+ 1] == '|') || (lexer->input[lexer->position] == '&'
+	if ((lexer->input[lexer->position] == '|'
+			&& lexer->input[lexer->position + 1] == '|')
+		|| (lexer->input[lexer->position] == '&'
 			&& lexer->input[lexer->position + 1] == '&'))
 		return (handle_operations(lexer, current, 2));
-	if ((lexer->input[lexer->position] == '>' && lexer->input[lexer->position
-			+ 1] == '>') || (lexer->input[lexer->position] == '<'
+	if ((lexer->input[lexer->position] == '>'
+			&& lexer->input[lexer->position + 1] == '>')
+		|| (lexer->input[lexer->position] == '<'
 			&& lexer->input[lexer->position + 1] == '<'))
 		return (handle_operations(lexer, current, 2));
 	if (current[0] == '|' || current[0] == '<' || current[0] == '>'
@@ -342,100 +363,91 @@ void	print_linked_list(t_token *token_list)
 	}
 }
 
-t_token	*get_cmd_and_redir(t_token *token_list)
+t_token *get_cmd_and_redir(t_token *token_list)
 {
-	t_token	*final_token;
-	t_token	*tmp;
-	t_token	*pipe;
-	t_token	*cmd_token;
-	char	**cmds;
-	t_token	*redir_head;
-	t_token	*redir_tail;
-	int		cmd_count;
-	int		cmd_capacity;
-	char	**new_cmds;
-	t_token	*redir_op;
-	t_token	*redir_target;
-	t_token	*redir_token;
+	int expand_h_doc = 0;
+    t_token *final_token = NULL;
+    t_token *tmp = token_list;
+    t_token *pipe;
+	// print_linked_list(token_list);
 
-	final_token = NULL;
-	tmp = token_list;
-	while (tmp)
-	{
-		if (tmp->type != PIPE)
-		{
-			cmd_token = NULL;
-			cmds = NULL;
-			redir_head = NULL;
-			redir_tail = NULL;
-			cmd_count = 0;
-			cmd_capacity = 8;
-			cmds = malloc(sizeof(char *) * cmd_capacity);
-			if (!cmds)
-				return (NULL);
-			while (tmp && tmp->type != PIPE)
-			{
-				if (tmp->type == CMD || tmp->type == SINGLE_QUOTE
-					|| tmp->type == DOUBLE_QUOTE)
-				{
-					if (cmd_count >= cmd_capacity)
-					{
-						cmd_capacity *= 2;
-						new_cmds = realloc(cmds, sizeof(char *) * cmd_capacity);
-						if (!new_cmds)
-						{
-							free(cmds);
-							return (NULL);
-						}
-						cmds = new_cmds;
-					}
-					cmds[cmd_count++] = strdup(tmp->value);
-					tmp = tmp->next;
-				}
-				else if (tmp->type == REDIR_IN || tmp->type == REDIR_OUT
-						|| tmp->type == APPEND || tmp->type == HEREDOC)
-				{
-					redir_op = tmp;
-					redir_target = tmp->next;
-					if (!redir_target)
-						break ;
-					redir_token = create_token(redir_target->value, 0,
-							redir_target->has_space);
-					redir_token->type = redir_op->type;
-					if (!redir_head)
-						redir_head = redir_token;
-					else
-						redir_tail->next = redir_token;
-					redir_tail = redir_token;
-					tmp = redir_target->next;
-				}
-				else
-					tmp = tmp->next;
-			}
-			cmds[cmd_count] = NULL;
-			if (cmds && cmds[0])
-			{
-				cmd_token = create_token(cmds[0], 0, 0);
-				cmd_token->type = CMD;
-			}
-			else
-			{
-				cmd_token = create_token("", 0, 0);
-				cmd_token->type = CMD;
-			}
-			cmd_token->cmds = cmds;
-			cmd_token->redir = redir_head;
-			append_token(&final_token, cmd_token);
-		}
-		else if (tmp && tmp->type == PIPE)
-		{
-			pipe = create_token(tmp->value, 0, tmp->has_space);
-			pipe->type = PIPE;
-			append_token(&final_token, pipe);
-			tmp = tmp->next;
-		}
-	}
-	return (final_token);
+    while (tmp)
+    {
+        if (tmp->type != PIPE)
+        {
+            t_token *cmd_token = NULL;
+            char **cmds = NULL;
+            t_token *redir_head = NULL;
+            t_token *redir_tail = NULL;
+            int cmd_count = 0;
+            int cmd_capacity = 8;
+
+            cmds = malloc(sizeof(char *) * cmd_capacity);
+            if (!cmds)
+                return NULL;
+
+            while (tmp && tmp->type != PIPE)
+            {
+                if (tmp->type == CMD || tmp->type == SINGLE_QUOTE || tmp->type == DOUBLE_QUOTE)
+                {
+                    if (cmd_count >= cmd_capacity)
+                    {
+                        cmd_capacity *= 2;
+                        char **new_cmds = realloc(cmds, sizeof(char *) * cmd_capacity);
+                        if (!new_cmds)
+                        {
+                            free(cmds);
+                            return NULL;
+                        }
+                        cmds = new_cmds;
+                    }
+                    cmds[cmd_count++] = strdup(tmp->value);
+                    tmp = tmp->next;
+                }
+                else if (tmp->type == REDIR_IN || tmp->type == REDIR_OUT || tmp->type == APPEND || tmp->type == HEREDOC)
+                {
+					expand_h_doc = tmp->next->expand_heredoc;
+                    t_token *redir_op = tmp;
+                    t_token *redir_target = tmp->next;
+                    if (!redir_target)
+                        break;
+                    t_token *redir_token = create_token(redir_target->value, 0, redir_target->has_space);
+					redir_token->expand_heredoc = expand_h_doc;
+                    redir_token->type = redir_op->type;
+                    if (!redir_head)
+                        redir_head = redir_token;
+                    else
+                        redir_tail->next = redir_token;
+                    redir_tail = redir_token;
+                    tmp = redir_target->next;
+                }
+                else
+                    tmp = tmp->next;
+            }
+            cmds[cmd_count] = NULL;
+            if (cmds && cmds[0])
+            {
+                cmd_token = create_token(cmds[0], 0, 0);
+                cmd_token->type = CMD;
+            }
+            else
+            {
+                cmd_token = create_token("", 0, 0);
+                cmd_token->type = CMD;
+            }
+            cmd_token->cmds = cmds;
+            cmd_token->redir = redir_head;
+            append_token(&final_token, cmd_token);
+        }
+        else if (tmp && tmp->type == PIPE)
+        {
+            pipe = create_token(tmp->value, 0, tmp->has_space);
+            pipe->type = PIPE;
+            append_token(&final_token, pipe);
+            tmp = tmp->next;
+        }
+    }
+    return final_token;
 }
 
 void	handler(int sig)
@@ -502,6 +514,10 @@ int	main(int ac, char **av, char **env)
 	(void)av;
 	int last_exit_status = 0;
 	t_env *env_list = init_env(env);
+	setup_shell_terminal();
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGINT, handler);
+	rl_catch_signals = 0;
 	while (1)
 	{
 		input = readline("minishell> ");
@@ -545,8 +561,8 @@ int	main(int ac, char **av, char **env)
 		split_expanded_tokens(&token_list);
 		final_token = get_cmd_and_redir(token_list);
 		process_heredoc(final_token, env_list);
-		close_heredoc_fds(final_token);
 		execute_cmds(final_token, &env_list, &last_exit_status);
+		close_heredoc_fds(final_token);
 		// print_linked_list(final_token);
 	}
 }

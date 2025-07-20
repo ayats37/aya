@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:51:12 by taya              #+#    #+#             */
-/*   Updated: 2025/07/20 15:51:56 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 16:59:01 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,15 +22,13 @@ void	heredoc_sigint_handler(int sig)
 	exit(130);
 }
 
-void	handle_heredoc_input(char *delimiter, int write_fd, t_token *token, t_env *envlist)
+void	handle_heredoc_input(char *delimiter, int write_fd, int expand, t_env *envlist)
 {
 	char	*line;
 
 	while (1)
 	{
 		line = readline("> ");
-		// if (token->expand_heredoc == 1)
-		// 	expand_heredoc(&line, envlist);
 		if (!line)
 		{
 			write(1, " ", 1);
@@ -40,6 +38,14 @@ void	handle_heredoc_input(char *delimiter, int write_fd, t_token *token, t_env *
 		{
 			free(line);
 			break ;
+		}
+		printf("line : %s\n", line);
+		if (expand == 1)
+		{
+			printf("we should expand this shit\n");
+			expand_heredoc(&line, envlist);			//false
+			printf("line : %s\n", line);
+			printf("djdj\n");
 		}
 		write(write_fd, line, ft_strlen(line));
 		write(write_fd, "\n", 1);
@@ -72,18 +78,16 @@ void	close_heredoc_fds(t_token *token)
 	}
 }
 
-void	process_heredoc(t_token *token, t_env *env_list)
+void process_heredoc(t_token *token, t_env *env_list)
 {
 	int		status;
-	pid_t	pid;
-	int		pipe_fd[2];
-	t_token	*redir;
-	t_token	*tmp;
-
+	pid_t pid;
+	int pipe_fd[2];
+	t_token *redir;
 	if (!token)
 		return ;
 	g_heredoc_interrupted = 0;
-	tmp = token;
+	t_token *tmp = token;
 	while (tmp)
 	{
 		if (tmp->redir)
@@ -93,11 +97,6 @@ void	process_heredoc(t_token *token, t_env *env_list)
 			{
 				if (redir->type == HEREDOC)
 				{
-					if (redir->fd != -1)
-					{
-						close(redir->fd);
-						redir->fd = -1;
-					}
 					if (pipe(pipe_fd) == -1)
 					{
 						perror("pipe failed");
@@ -118,7 +117,7 @@ void	process_heredoc(t_token *token, t_env *env_list)
 						close(pipe_fd[0]);
 						signal(SIGINT, heredoc_sigint_handler);
 						signal(SIGQUIT, SIG_IGN);
-						handle_heredoc_input(redir->value, pipe_fd[1], token, env_list);
+						handle_heredoc_input(redir->value, pipe_fd[1],token->redir->expand_heredoc, env_list);
 						close(pipe_fd[1]);
 						exit(0);
 					}
@@ -132,7 +131,6 @@ void	process_heredoc(t_token *token, t_env *env_list)
 						g_heredoc_interrupted = 1;
 						signal(SIGINT, handler);
 						reset_terminal_mode();
-						close_heredoc_fds(token);
 						return ;
 					}
 					else if (WIFEXITED(status) && WEXITSTATUS(status) == 130)
@@ -142,7 +140,6 @@ void	process_heredoc(t_token *token, t_env *env_list)
 						g_heredoc_interrupted = 1;
 						signal(SIGINT, handler);
 						reset_terminal_mode();
-						close_heredoc_fds(token);
 						return ;
 					}
 					else
@@ -153,6 +150,6 @@ void	process_heredoc(t_token *token, t_env *env_list)
 				redir = redir->next;
 			}
 		}
-		tmp = tmp->next;
+		tmp = tmp->next;	
 	}
 }
