@@ -160,8 +160,10 @@ int					ft_cd(char **cmd, t_env *envlist);
 void				handler(int sig);
 void				reset_terminal_mode(void);
 
-void expand_variables(t_token **token_list, t_env *env_list);
-void to_expand(t_token *tmp, t_env *env_list);
+// void expand_variables(t_token **token_list, t_env *env_list);
+// void to_expand(t_token *tmp, t_env *env_list);
+void expand_variables(t_token **token_list, t_env *env_list, int last_exit_status);
+void to_expand(t_token *tmp, t_env *env_list, int last_exit_status);
 void replace_var(t_token *tmp, int i, char *env, int len);
 void split_expanded_tokens(t_token **head);
 char *get_env_var(t_env *env_list, char *name);

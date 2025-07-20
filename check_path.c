@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/22 10:52:12 by taya              #+#    #+#             */
-/*   Updated: 2025/07/17 13:50:17 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 17:54:27 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ char	*check_paths(char **paths, char *cmd)
 		full_path = build_path(paths[i], cmd);
 		if (!full_path)
 			return (NULL);
-		if (access(full_path, F_OK | X_OK) == 0)
+		if (access(full_path, F_OK) == 0)
 			return (full_path);
 		free(full_path);
 		i++;

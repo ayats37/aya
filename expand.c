@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:52:17 by taya              #+#    #+#             */
-/*   Updated: 2025/07/20 17:04:13 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/20 17:37:40 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,7 @@ void replace_var(t_token *tmp, int i, char *env, int len)
 	free(new);
 }
 
-void to_expand(t_token *tmp, t_env *env_list)
+void to_expand(t_token *tmp, t_env *env_list, int last_exit_status)
 {
 	char *var_name = NULL;
 	char *env_value = NULL;
@@ -111,7 +111,10 @@ void to_expand(t_token *tmp, t_env *env_list)
 			tmp->expand = 1;
 			if (tmp->value[i + 1] == '?')
 			{
-				// get_exit_status();
+				char *exit_str = ft_itoa(last_exit_status);
+				replace_var(tmp, i, exit_str, 1); 
+				i += ft_strlen(exit_str);          
+				free(exit_str);
 				i++;
 			}
 			else
@@ -132,7 +135,7 @@ void to_expand(t_token *tmp, t_env *env_list)
 	}
 }
 
-void expand_variables(t_token **token_list, t_env *env_list) 
+void expand_variables(t_token **token_list, t_env *env_list, int last_exit_status) 
 {
 	if (!token_list)
 		return ;
@@ -149,7 +152,7 @@ void expand_variables(t_token **token_list, t_env *env_list)
 		}
 		else if (tmp->type == 1 || tmp->type == 4){
 			// print_linked_list(tmp);
-			to_expand(tmp, env_list);
+			to_expand(tmp, env_list, last_exit_status);
 		}
 		tmp = tmp->next; 		
 	}
