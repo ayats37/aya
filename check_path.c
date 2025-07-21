@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/22 10:52:12 by taya              #+#    #+#             */
-/*   Updated: 2025/07/20 17:54:27 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/21 11:20:30 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ char	*check_paths(char **paths, char *cmd)
 
 	if ((cmd[0] == '.' && cmd[1] == '/') || cmd[0] == '/')
 	{
-		if (access(cmd, F_OK | X_OK) == 0)
+		if (access(cmd, F_OK) == 0)
 			return (ft_strdup(cmd));
 		return (NULL);
 	}
