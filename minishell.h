@@ -67,6 +67,7 @@ typedef struct s_pipe_data
 	int				*last_exit_status;
 }					t_pipe_data;
 
+void	print_linked_list(t_token *token_list);
 int					is_builtin(char *cmd);
 int					dispatch_builtin(char **cmd, t_env **envlist);
 int					execute_builtin(t_token *node, t_env **envlist);
