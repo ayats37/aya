@@ -14,6 +14,7 @@
 # include <unistd.h>
 # include <readline/history.h>
 # include <readline/readline.h>
+#include <sys/stat.h>
 
 extern int			g_heredoc_interrupted;
 

@@ -6,7 +6,7 @@
 /*   By: taya <taya@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/17 13:51:12 by taya              #+#    #+#             */
-/*   Updated: 2025/07/20 16:59:01 by taya             ###   ########.fr       */
+/*   Updated: 2025/07/21 13:19:54 by taya             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,6 +117,7 @@ void process_heredoc(t_token *token, t_env *env_list)
 						close(pipe_fd[0]);
 						signal(SIGINT, heredoc_sigint_handler);
 						signal(SIGQUIT, SIG_IGN);
+						print_linked_list(redir);
 						handle_heredoc_input(redir->value, pipe_fd[1],token->redir->expand_heredoc, env_list);
 						close(pipe_fd[1]);
 						exit(0);
